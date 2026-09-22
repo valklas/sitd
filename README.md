@@ -12,14 +12,6 @@ nix develop
 
 in the project root. This will install the required packages and start fish as the shell.
 
-## Running
-
-To run the server for local network do:
-
-```bash
-uvicorn server:app --host 0.0.0.0
-```
-
 ## LICENSE
 
 This project is under [MIT](LICENSE).
