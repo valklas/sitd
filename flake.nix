@@ -22,7 +22,7 @@
 
             shellHook = ''
                 exec fish
-            ''
+            '';
         };
     };
 }
