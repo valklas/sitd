@@ -17,6 +17,7 @@
                 python3
                 python314Packages.fastapi
                 python314Packages.uvicorn
+                python314Packages.pathlib2
                 bun
                 fish
                 git
