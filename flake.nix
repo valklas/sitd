@@ -15,6 +15,8 @@
         devShells.${system}.default = pkgs.mkShell {
             packages = with pkgs; [
                 python3
+                python314Packages.fastapi
+                python314Packages.uvicorn
                 bun
                 fish
                 git
