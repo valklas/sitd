@@ -4,22 +4,6 @@ from tempfile import TemporaryDirectory
 from sitd.filesystem import inspect_dir
 
 
-def create_test_tree(current_dir, depth):
-    files = ["1.txt", "2.txt", "3.txt"]
-
-    for file_name in files:
-        new_file = current_dir / file_name
-        new_file.write_text(f"This is the {file_name} file.")
-
-    if depth == 0:
-        return
-
-    new_dir = current_dir / f"{depth}_dir"
-    new_dir.mkdir()
-
-    create_test_tree(new_dir, depth - 1)
-
-
 def assert_entries_valid(entries, root_dir):
     for item in entries:
         assert isinstance(item, dict)
@@ -48,6 +32,22 @@ def assert_entries_valid(entries, root_dir):
             assert actual_path.is_dir()
 
             assert_entries_valid(item["children"], root_dir)
+
+
+def create_test_tree(current_dir, depth):
+    files = ["1.txt", "2.txt", "3.txt"]
+
+    for file_name in files:
+        new_file = current_dir / file_name
+        new_file.write_text(f"This is the {file_name} file.")
+
+    if depth == 0:
+        return
+
+    new_dir = current_dir / f"{depth}_dir"
+    new_dir.mkdir()
+
+    create_test_tree(new_dir, depth - 1)
 
 
 def test_empty_directory():
