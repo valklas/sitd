@@ -8,6 +8,7 @@ result = inspect_dir(source_path)
 assert isinstance(result, list)
 assert len(result) >= 0
 
+
 def check_entries(entries):
     for item in entries:
         assert isinstance(item, dict)
@@ -24,5 +25,6 @@ def check_entries(entries):
             assert isinstance(item["children"], list)
 
             check_entries(item["children"])
+
 
 check_entries(result)
