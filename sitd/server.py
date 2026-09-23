@@ -17,3 +17,10 @@ def home():
 def files():
     result = inspect_dir(storage_path, storage_path)
     return result
+
+
+@app.get("/api/files/{path}")
+def files(path: str):
+    sub_path = storage_path / path
+    result = inspect_dir(sub_path, storage_path)
+    return result
