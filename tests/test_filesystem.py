@@ -20,7 +20,7 @@ def create_test_tree(current_dir, depth):
     create_test_tree(new_dir, depth - 1)
 
 
-def check_entries(entries, root_dir):
+def assert_entries_valid(entries, root_dir):
     for item in entries:
         assert isinstance(item, dict)
 
@@ -47,7 +47,7 @@ def check_entries(entries, root_dir):
             assert isinstance(item["children"], list)
             assert actual_path.is_dir()
 
-            check_entries(item["children"], root_dir)
+            assert_entries_valid(item["children"], root_dir)
 
 
 def test_empty_directory():
@@ -73,7 +73,7 @@ def test_files():
         assert isinstance(result, list)
         assert len(result) == 3
 
-        check_entries(result, root_dir)
+        assert_entries_valid(result, root_dir)
 
 
 def test_nested_directories():
@@ -87,4 +87,4 @@ def test_nested_directories():
         assert isinstance(result, list)
         assert len(result) == 4
 
-        check_entries(result, root_dir)
+        assert_entries_valid(result, root_dir)
