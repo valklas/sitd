@@ -1,5 +1,5 @@
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 from .filesystem import inspect_dir
 
@@ -7,6 +7,10 @@ app = FastAPI()
 
 storage_path = Path("~/.local/share/sitd/storage").expanduser()
 
+
+def path_not_found(path):
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="You sure this is the correct path...")
 
 @app.get("/")
 def home():
@@ -22,6 +26,8 @@ def files():
 @app.get("/api/files/{path:path}")
 def files(path: str):
     sub_path = storage_path / path
+
+    path_not_found(sub_path)
 
     if sub_path.is_dir():
         result = inspect_dir(sub_path, storage_path)
