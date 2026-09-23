@@ -21,6 +21,6 @@ def inspect_dir(path, root_path):
             entries.append(dir_entry)
 
         else:
-            print(f"Invalid file or folder {item}")
+            return f"Invalid file or folder {item}"
 
     return entries
