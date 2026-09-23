@@ -2,13 +2,14 @@ from pathlib import Path
 
 def human_readable(size):
     units = ["B", "KB", "MB", "GB", "TB"]
-    unit_index = 0
-    length_units = len(units) - 1
+    units_index = 0
+    units_length = len(units) - 1
 
-    while size >= 1024 and unit_index < length_units:
+    while size >= 1024 and units_index < units_length:
         size /= 1024
-        unit_index += 1
-    return f"{size:.2f} {units[unit_index]}"
+        units_index += 1
+
+    return f"{size:.2f} {units[units_index]}"
 
 def inspect_dir(path):
     entries = []
