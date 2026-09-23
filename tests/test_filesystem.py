@@ -27,6 +27,7 @@ def check_entries(entries):
 
         assert "name" in item
         assert "type" in item
+        assert "path" in item
         assert item["type"] in ["file", "directory"]
 
         if item["type"] == "file":
