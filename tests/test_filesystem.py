@@ -27,15 +27,28 @@ def check_entries(entries):
 
         assert "name" in item
         assert "type" in item
-        assert "path" in item
         assert item["type"] in ["file", "directory"]
+
+        assert "path" in item
+        assert isinstance(item["path"], str)
+        assert item["path"].endswith(item["name"])
+
+        actual_path = root_dir / item["path"]
+
+        assert actual_path.exists()
+        assert actual_path.name == item["name"]
 
         if item["type"] == "file":
             assert "file_size" in item
+            assert item["file_size"] == actual_path.stat().st_size
+
+            assert actual_path.is_file()
 
         elif item["type"] == "directory":
             assert "children" in item
             assert isinstance(item["children"], list)
+
+            assert actual_path.is_dir()
 
             check_entries(item["children"])
 
@@ -44,11 +57,13 @@ with TemporaryDirectory() as temp_dir:
     root_dir = Path(temp_dir)
 
     create_test_tree(root_dir, 5)
+
     print(list(root_dir.iterdir()))
 
-    result = inspect_dir(root_dir)
+    result = inspect_dir(root_dir, root_dir)
     
     assert isinstance(result, list)
+
     assert len(result) == 4
 
     check_entries(result)
