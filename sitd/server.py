@@ -1,11 +1,13 @@
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 
 from .filesystem import inspect_dir
 
-from pathlib import Path
 
 app = FastAPI()
+
 
 storage_path = Path("~/.local/share/sitd/storage").expanduser()
 
