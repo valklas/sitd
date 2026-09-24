@@ -88,6 +88,15 @@ def test_api_file_not_found(test_storage):
     assert response.status_code == 404
 
 
+def test_cannot_escape_storage(test_storage):
+    outside_file = test_storage.parent / "secret.txt"
+    outside_file.write_text("secret")
+
+    response = client.get("/files/../secret.txt")
+
+    assert response.status_code == 404
+
+
 def test_serve_root_directory(test_storage):
     response = client.get("/files")
 
