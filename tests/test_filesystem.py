@@ -1,7 +1,8 @@
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 from sitd.filesystem import inspect_dir
+
+from tempfile import TemporaryDirectory
 
 
 def assert_entries_valid(entries, root_dir):
