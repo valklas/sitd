@@ -16,9 +16,14 @@ def path_not_found(path):
     if not path.exists():
         raise HTTPException(status_code=404, detail="You sure this is the correct path...")
 
-def get_sub_path(path):
-    sub_path = storage_path / path
-    return sub_path
+def get_target_path(path):
+    root = storage_path.resolve()
+    target_path = (storage_path / path).resolve()
+
+    if not target_path.is_relative_to(root):
+        raise HTTPException(status_code=404, detail="Naughty you...")
+    
+    return target_path
 
 
 @app.get("/")
@@ -34,31 +39,32 @@ def api_files():
 
 @app.get("/api/files/{path:path}")
 def api_sub_files(path: str):
-    sub_path = get_sub_path(path)
 
-    path_not_found(sub_path)
+    target_path = get_target_path(path)
 
-    if sub_path.is_dir():
-        result = inspect_dir(sub_path, storage_path)
+    path_not_found(target_path)
+
+    if target_path.is_dir():
+        result = inspect_dir(target_path, storage_path)
         return result
 
-    elif sub_path.is_file():
+    elif target_path.is_file():
         file_entry = {
-            "name": sub_path.name,
+            "name": target_path.name,
             "type": "file",
-            "path": str(sub_path.relative_to(storage_path)),
-            "file_size": sub_path.stat().st_size
+            "path": str(target_path.relative_to(storage_path)),
+            "file_size": target_path.stat().st_size
         }
         return file_entry
 
 
 @app.get("/files/{path:path}")
 def serve_sub_files(path: str):
-    sub_path = get_sub_path(path)
+    target_path = get_target_path(path)
 
-    path_not_found(sub_path)
+    path_not_found(target_path)
 
-    if sub_path.is_dir():
+    if target_path.is_dir():
         html = ""
 
         if path != "":
@@ -67,7 +73,7 @@ def serve_sub_files(path: str):
 
             html += f'<a href="{parent_href}">..</a><br>'
 
-        for item in sub_path.iterdir():
+        for item in target_path.iterdir():
         
             if path:
                 href = f"/files/{path}/{item.name}"
@@ -79,5 +85,5 @@ def serve_sub_files(path: str):
 
         return HTMLResponse(html)
 
-    elif sub_path.is_file():
-        return FileResponse(sub_path)
+    elif target_path.is_file():
+        return FileResponse(target_path)
