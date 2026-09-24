@@ -1,6 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 import pytest
 
@@ -159,3 +160,24 @@ def test_files_cannot_escape_storage(test_storage):
     response = client.get("/files/../secret.txt")
 
     assert response.status_code == 404
+
+def test_get_target_path(test_storage):
+    result = sitd.server.get_target_path("1.txt")
+
+    assert result == test_storage / "1.txt"
+
+
+def test_get_nested_target_path(test_storage):
+    result = sitd.server.get_target_path(
+        "5_dir/4_dir/1.txt"
+    )
+
+    assert result == test_storage / "5_dir/4_dir/1.txt"
+
+
+def test_get_target_path_cannot_escape_storage(test_storage):
+    with pytest.raises(HTTPException) as exc_info:
+        sitd.server.get_target_path("../../sec.txt")
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Naughty you..."
