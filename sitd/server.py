@@ -12,7 +12,7 @@ app = FastAPI()
 storage_path = Path("~/.local/share/sitd/storage").expanduser()
 
 
-def path_not_found(path):
+def validate_path_exists(path):
     if not path.exists():
         raise HTTPException(status_code=404, detail="You sure this is the correct path...")
 
@@ -42,7 +42,7 @@ def api_sub_files(path: str):
 
     target_path = get_target_path(path)
 
-    path_not_found(target_path)
+    validate_path_exists(target_path)
 
     if target_path.is_dir():
         result = inspect_dir(target_path, storage_path)
@@ -62,7 +62,7 @@ def api_sub_files(path: str):
 def serve_sub_files(path: str):
     target_path = get_target_path(path)
 
-    path_not_found(target_path)
+    validate_path_exists(target_path)
 
     if target_path.is_dir():
         html = ""
