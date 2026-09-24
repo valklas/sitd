@@ -67,7 +67,7 @@ def test_api_file(test_storage):
     assert result["file_size"] == 23
 
 
-def test_api_nested_path(test_storage):
+def test_api_nested_directory(test_storage):
     response = client.get(
         "/api/files/5_dir/4_dir/3_dir/2_dir/1_dir"
     )
@@ -88,11 +88,11 @@ def test_api_file_not_found(test_storage):
     assert response.status_code == 404
 
 
-def test_cannot_escape_storage(test_storage):
+def test_api_files_cannot_escape_storage(test_storage):
     outside_file = test_storage.parent / "secret.txt"
     outside_file.write_text("secret")
 
-    response = client.get("/files/../secret.txt")
+    response = client.get("/api/files/../secret.txt")
 
     assert response.status_code == 404
 
@@ -148,5 +148,14 @@ def test_serve_nested_file(test_storage):
 
 def test_serve_file_not_found(test_storage):
     response = client.get("/files/does-not-exist")
+
+    assert response.status_code == 404
+
+
+def test_files_cannot_escape_storage(test_storage):
+    outside_file = test_storage.parent / "secret.txt"
+    outside_file.write_text("secret")
+
+    response = client.get("/files/../secret.txt")
 
     assert response.status_code == 404
