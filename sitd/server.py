@@ -68,6 +68,7 @@ def serve_sub_files(path: str):
         
             if path:
                 href = f"/files/{path}/{item.name}"
+
             else:
                 href = f"/files/{item.name}"
         

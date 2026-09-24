@@ -50,16 +50,6 @@ def create_test_tree(current_dir, depth):
     create_test_tree(new_dir, depth - 1)
 
 
-def test_empty_directory():
-    with TemporaryDirectory() as temp_dir:
-        root_dir = Path(temp_dir)
-
-        result = inspect_dir(root_dir, root_dir)
-
-        assert isinstance(result, list)
-        assert result == []
-
-
 def test_files():
     with TemporaryDirectory() as temp_dir:
         root_dir = Path(temp_dir)
@@ -72,20 +62,6 @@ def test_files():
 
         assert isinstance(result, list)
         assert len(result) == 3
-
-        assert_entries_valid(result, root_dir)
-
-
-def test_nested_directories():
-    with TemporaryDirectory() as temp_dir:
-        root_dir = Path(temp_dir)
-
-        create_test_tree(root_dir, 5)
-
-        result = inspect_dir(root_dir, root_dir)
-
-        assert isinstance(result, list)
-        assert len(result) == 4
 
         assert_entries_valid(result, root_dir)
 
@@ -108,6 +84,30 @@ def test_single_file():
         assert item["type"] == "file"
         assert item["path"] == "hello.txt"
         assert item["file_size"] == file.stat().st_size
+
+        assert_entries_valid(result, root_dir)
+
+
+def test_empty_directory():
+    with TemporaryDirectory() as temp_dir:
+        root_dir = Path(temp_dir)
+
+        result = inspect_dir(root_dir, root_dir)
+
+        assert isinstance(result, list)
+        assert result == []
+
+
+def test_nested_directories():
+    with TemporaryDirectory() as temp_dir:
+        root_dir = Path(temp_dir)
+
+        create_test_tree(root_dir, 5)
+
+        result = inspect_dir(root_dir, root_dir)
+
+        assert isinstance(result, list)
+        assert len(result) == 4
 
         assert_entries_valid(result, root_dir)
 
