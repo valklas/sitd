@@ -21,6 +21,7 @@
                 python314Packages.uvicorn
                 python314Packages.pathlib2
                 python314Packages.pytest
+                python314Packages.httpx2
                 bun
                 fish
                 git
