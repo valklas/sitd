@@ -161,6 +161,7 @@ def test_files_cannot_escape_storage(test_storage):
 
     assert response.status_code == 404
 
+
 def test_get_target_path(test_storage):
     result = sitd.server.get_target_path("1.txt")
 
@@ -181,3 +182,18 @@ def test_get_target_path_cannot_escape_storage(test_storage):
 
     assert exc_info.value.status_code == 404
     assert exc_info.value.detail == "Naughty you..."
+
+
+def test_validate_path_exists(test_storage):
+    path = test_storage / "1.txt"
+
+    sitd.server.validate_path_exists(path)
+
+
+def test_validate_path_does_not_exist(test_storage):
+    path = test_storage / "does-not-exist"
+
+    with pytest.raises(HTTPException) as exc_info:
+        sitd.server.validate_path_exists(path)
+
+    assert exc_info.value.status_code == 404
