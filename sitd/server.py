@@ -2,11 +2,14 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 from .filesystem import inspect_dir
 
 
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="sitd/static"), name="static")
 
 
 storage_path = Path("~/.local/share/sitd/storage").expanduser()
@@ -28,7 +31,7 @@ def get_target_path(path):
 
 @app.get("/")
 def home():
-    return {"message": "Hello from SITD!"}
+    return FileResponse("sitd/static/index.html")
 
 
 @app.get("/api/files")
@@ -64,26 +67,7 @@ def serve_sub_files(path: str):
 
     validate_path_exists(target_path)
 
-    if target_path.is_dir():
-        html = ""
-
-        if path != "":
-            parent = Path(path).parent
-            parent_href = f"/files/{parent}"
-
-            html += f'<a href="{parent_href}">..</a><br>'
-
-        for item in target_path.iterdir():
-        
-            if path:
-                href = f"/files/{path}/{item.name}"
-
-            else:
-                href = f"/files/{item.name}"
-        
-            html += f'<a href="{href}">{item.name}</a><br>'
-
-        return HTMLResponse(html)
-
-    elif target_path.is_file():
+    if target_path.is_file():
         return FileResponse(target_path)
+
+    raise HTTPException(status_code=404, detail="Not a file")
