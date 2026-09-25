@@ -12,10 +12,22 @@ function getCurrentPath() {
 }
 
 async function getDirectory(path) {
-    const response= await fetch(`/api/files/${path}`);
+    const url = path ? `/api/files/${path}` : "/api/files";
+
+    const response = await fetch(url);
     const data = await response.json();
 
     return data;
+}
+
+async function loadIcon(path) {
+    const response = await fetch(path);
+    const svgText = await response.text();
+
+    const container = document.createElement("div");
+    container.innerHTML = svgText;
+
+    return container.firstElementChild;
 }
 
 function renderBreadcrumb(path) {
@@ -59,7 +71,7 @@ function renderBreadcrumb(path) {
     }
 }
 
-function renderDirectory(data) {
+async function renderDirectory(data) {
     files.innerHTML = "";
     
     const currentPath = getCurrentPath();
@@ -84,30 +96,39 @@ function renderDirectory(data) {
         });
 
         files.appendChild(parentLink);
-        files.appendChild(document.createElement("br"));
     }
 
     for (const item of data) {
         const link = document.createElement("a");
-        link.textContent = item.name;
+        const name = document.createElement("span");
 
-        if (item.type == "file") {
-            link.href = `/files/${item.path}`;
+        link.href = `/files/${item.path}`;
+        name.textContent = item.name;
+
+        let icon;
+
+        if (item.type === "file") {
+            icon = await loadIcon(
+                "/static/assets/icons/white/file-white-24.svg"
+            );
         }
-        else if (item.type == "directory") {
-            link.href = `/files/${item.path}`;
+        else if (item.type === "directory") {
+            icon = await loadIcon(
+                "/static/assets/icons/white/file-directory-fill-white-24.svg"
+            );
 
             link.addEventListener("click", (event) => {
                 event.preventDefault();
 
                 history.pushState({}, "", `/files/${item.path}`);
-
                 showDirectory(item.path);
             });
         }
 
+        link.appendChild(icon);
+        link.appendChild(name);
+
         files.appendChild(link);
-        files.appendChild(document.createElement("br"));
     }
 }
 
@@ -116,7 +137,7 @@ async function showDirectory(path) {
 
     const data = await getDirectory(path);
 
-    renderDirectory(data);
+    await renderDirectory(data);
 }
 
 window.addEventListener("popstate", () => {
