@@ -81,6 +81,22 @@ def test_api_file(test_storage):
     assert result["type"] == "file"
     assert result["path"] == "1.txt"
     assert result["file_size"] == 23
+    assert result["mime_type"] == "text/plain"
+
+
+def test_api_directory_file_mime_type(test_storage):
+    response = client.get("/api/files/5_dir")
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    file_entry = next(
+        item for item in result
+        if item["name"] == "1.txt"
+    )
+
+    assert file_entry["mime_type"] == "text/plain"
 
 
 def test_api_file_not_found(test_storage):
@@ -159,6 +175,66 @@ def test_files_cannot_escape_storage(test_storage):
     assert response.status_code == 404
 
 
+def test_view_file(test_storage):
+    response = client.get("/view/1.txt")
+
+    assert response.status_code == 200
+    assert response.text == "This is the 1.txt file."
+
+
+def test_view_file_mime_type(test_storage):
+    response = client.get("/view/1.txt")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/plain")
+
+
+def test_view_nested_file(test_storage):
+    response = client.get(
+        "/view/5_dir/4_dir/3_dir/2_dir/1_dir/1.txt"
+    )
+
+    assert response.status_code == 200
+    assert response.text == "This is the 1.txt file."
+
+
+def test_view_file_not_found(test_storage):
+    response = client.get("/view/does-not-exist")
+
+    assert response.status_code == 404
+
+
+def test_view_directory(test_storage):
+    response = client.get("/view/5_dir")
+
+    assert response.status_code == 404
+
+
+def test_view_file_cannot_escape_storage(test_storage):
+    outside_file = test_storage.parent / "secret.txt"
+    outside_file.write_text("secret")
+
+    response = client.get("/view/../secret.txt")
+
+    assert response.status_code == 404
+
+
+def test_view_unknown_mime_type(test_storage):
+    path = test_storage / "unknown.sitdtest"
+    path.write_text("unknown file")
+
+    response = client.get("/view/unknown.sitdtest")
+
+    assert response.status_code == 200
+    assert response.headers["content-disposition"].startswith(
+        "attachment"
+    )
+
+    assert 'filename="unknown.sitdtest"' in (
+        response.headers["content-disposition"]
+    )
+
+
 def test_get_target_path(test_storage):
     result = sitd.server.get_target_path("1.txt")
 
@@ -194,3 +270,19 @@ def test_validate_path_does_not_exist(test_storage):
         sitd.server.validate_path_exists(path)
 
     assert exc_info.value.status_code == 404
+
+
+def test_get_mime_type(test_storage):
+    path = test_storage / "1.txt"
+
+    result = sitd.server.get_mime_type(path)
+
+    assert result == "text/plain"
+
+
+def test_get_mime_type_unknown(test_storage):
+    path = test_storage / "something.sitdtest"
+
+    result = sitd.server.get_mime_type(path)
+
+    assert result is None
