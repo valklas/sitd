@@ -29,6 +29,19 @@ def test_storage():
             sitd.server.storage_path = old_storage_path
 
 
+def test_api_files(test_storage):
+    response = client.get("/api/files")
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert isinstance(result, list)
+    assert len(result) == 4
+
+    assert_entries_valid(result, test_storage)
+
+
 def test_api_directory(test_storage):
     response = client.get("/api/files/5_dir")
 
@@ -53,19 +66,6 @@ def test_api_nested_directory(test_storage):
 
     assert isinstance(result, list)
     assert len(result) == 3
-
-    assert_entries_valid(result, test_storage)
-
-
-def test_api_files(test_storage):
-    response = client.get("/api/files")
-
-    assert response.status_code == 200
-
-    result = response.json()
-
-    assert isinstance(result, list)
-    assert len(result) == 4
 
     assert_entries_valid(result, test_storage)
 
@@ -96,6 +96,36 @@ def test_api_files_cannot_escape_storage(test_storage):
     response = client.get("/api/files/../secret.txt")
 
     assert response.status_code == 404
+
+
+def test_root_redirects_to_files(test_storage):
+    response = client.get("/", follow_redirects=False)
+
+    assert response.status_code == 307
+    assert response.headers["location"] == "/files"
+
+
+def test_serve_files_root(test_storage):
+    response = client.get("/files")
+
+    assert response.status_code == 200
+    assert "<title>SITD (Serve It To Devices)</title>" in response.text
+
+
+def test_serve_directory(test_storage):
+    response = client.get("/files/5_dir")
+
+    assert response.status_code == 200
+    assert "<title>SITD (Serve It To Devices)</title>" in response.text
+
+
+def test_serve_nested_directory(test_storage):
+    response = client.get(
+        "/files/5_dir/4_dir/3_dir"
+    )
+
+    assert response.status_code == 200
+    assert "<title>SITD (Serve It To Devices)</title>" in response.text
 
 
 def test_serve_file(test_storage):
