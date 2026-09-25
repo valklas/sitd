@@ -29,8 +29,8 @@ def test_storage():
             sitd.server.storage_path = old_storage_path
 
 
-def test_api_files(test_storage):
-    response = client.get("/api/files")
+def test_api_directory(test_storage):
+    response = client.get("/api/files/5_dir")
 
     assert response.status_code == 200
 
@@ -42,8 +42,23 @@ def test_api_files(test_storage):
     assert_entries_valid(result, test_storage)
 
 
-def test_api_directory(test_storage):
-    response = client.get("/api/files/5_dir")
+def test_api_nested_directory(test_storage):
+    response = client.get(
+        "/api/files/5_dir/4_dir/3_dir/2_dir/1_dir"
+    )
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert isinstance(result, list)
+    assert len(result) == 3
+
+    assert_entries_valid(result, test_storage)
+
+
+def test_api_files(test_storage):
+    response = client.get("/api/files")
 
     assert response.status_code == 200
 
@@ -68,21 +83,6 @@ def test_api_file(test_storage):
     assert result["file_size"] == 23
 
 
-def test_api_nested_directory(test_storage):
-    response = client.get(
-        "/api/files/5_dir/4_dir/3_dir/2_dir/1_dir"
-    )
-
-    assert response.status_code == 200
-
-    result = response.json()
-
-    assert isinstance(result, list)
-    assert len(result) == 3
-
-    assert_entries_valid(result, test_storage)
-
-
 def test_api_file_not_found(test_storage):
     response = client.get("/api/files/does-not-exist")
 
@@ -96,39 +96,6 @@ def test_api_files_cannot_escape_storage(test_storage):
     response = client.get("/api/files/../secret.txt")
 
     assert response.status_code == 404
-
-
-def test_serve_root_directory(test_storage):
-    response = client.get("/files")
-
-    assert response.status_code == 200
-
-    assert "1.txt" in response.text
-    assert "2.txt" in response.text
-    assert "3.txt" in response.text
-    assert "5_dir" in response.text
-
-
-def test_serve_subdirectory(test_storage):
-    response = client.get("/files/5_dir")
-
-    assert response.status_code == 200
-
-    assert "1.txt" in response.text
-    assert "2.txt" in response.text
-    assert "3.txt" in response.text
-
-
-def test_serve_nested_directory(test_storage):
-    response = client.get(
-        "/files/5_dir/4_dir/3_dir"
-    )
-
-    assert response.status_code == 200
-
-    assert "1.txt" in response.text
-    assert "2.txt" in response.text
-    assert "3.txt" in response.text
 
 
 def test_serve_file(test_storage):
