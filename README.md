@@ -10,9 +10,25 @@ This project includes a **flake.nix** so you can do:
 nix develop
 ```
 
-in the project root. This will install the required packages and start fish as the shell.
+in the project root. This will install the required packages/dependencies and start `fish` as the shell.
 
-## Third-parties resources/assets
+## Running Server
+
+Once you install the required packages/dependencies, you can run the server from project root using:
+
+```bash
+uvicorn sitd.server:app --host 0.0.0.0 --reload
+```
+
+Then you can visit the web page from any device using:
+
+```plaintext
+machineip:8000
+```
+
+Machine ip is the ip of the machine that the server is running on.
+
+## Third-partie resources/assets
 
 See [LICENSES](LICENSES/)
 
