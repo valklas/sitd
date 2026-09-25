@@ -1,5 +1,6 @@
 const breadcrumb = document.getElementById("breadcrumb");
 const files = document.getElementById("files");
+const iconCache = new Map();
 
 function getCurrentPath() {
     let path = window.location.pathname;
@@ -21,19 +22,33 @@ async function getDirectory(path) {
 }
 
 async function loadIcon(path) {
+    if (iconCache.has(path)) {
+        const svg = iconCache.get(path);
+        
+        const iconClone = svg.cloneNode(true);
+        return iconClone;
+    }
+
     const response = await fetch(path);
     const svgText = await response.text();
 
     const container = document.createElement("div");
     container.innerHTML = svgText;
 
-    return container.firstElementChild;
+    const svg = container.firstElementChild;
+
+    iconCache.set(path, svg);
+
+    const iconClone = svg.cloneNode(true);
+
+    return iconClone;
 }
 
 function renderBreadcrumb(path) {
     breadcrumb.innerHTML = "";
 
     const home = document.createElement("a");
+    const fragment = document.createDocumentFragment();
 
     home.textContent = "Home";
     home.href = "/files";
@@ -45,13 +60,13 @@ function renderBreadcrumb(path) {
         showDirectory("");
     });
 
-    breadcrumb.appendChild(home);
+    fragment.appendChild(home);
 
     const parts = path ? path.split("/") : [];
 
     for (let i = 0; i < parts.length; i++) {
         const separator = document.createTextNode(" / ");
-        breadcrumb.appendChild(separator);
+        fragment.appendChild(separator);
 
         const link = document.createElement("a");
         link.textContent = parts[i];
@@ -67,14 +82,18 @@ function renderBreadcrumb(path) {
             showDirectory(linkPath);
         });
 
-        breadcrumb.appendChild(link);
+        fragment.appendChild(link);
     }
+
+    breadcrumb.appendChild(fragment)
 }
 
 async function renderDirectory(data) {
     files.innerHTML = "";
     
     const currentPath = getCurrentPath();
+
+    const fragment = document.createDocumentFragment();
 
     if (currentPath !== "") {
         const parentLink = document.createElement("a");
@@ -95,7 +114,7 @@ async function renderDirectory(data) {
             showDirectory(parent);
         });
 
-        files.appendChild(parentLink);
+        fragment.appendChild(parentLink);
     }
 
     for (const item of data) {
@@ -128,8 +147,10 @@ async function renderDirectory(data) {
         link.appendChild(icon);
         link.appendChild(name);
 
-        files.appendChild(link);
+        fragment.appendChild(link);
     }
+
+    files.appendChild(fragment);
 }
 
 async function showDirectory(path) {
