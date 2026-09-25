@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from .filesystem import inspect_dir
+from .filesystem import get_mime_type, inspect_dir
 
 
 app = FastAPI()
@@ -56,7 +56,8 @@ def api_sub_files(path: str):
             "name": target_path.name,
             "type": "file",
             "path": str(target_path.relative_to(storage_path)),
-            "file_size": target_path.stat().st_size
+            "file_size": target_path.stat().st_size,
+            "mime_type": get_mime_type(target_path)
         }
         return file_entry
 
@@ -72,3 +73,20 @@ def serve_sub_files(path: str):
 
     elif target_path.is_dir():
             return FileResponse("sitd/static/index.html")
+
+
+@app.get("/view/{path:path}")
+def view_file(path: str):
+    target_path = get_target_path(path)
+    validate_path_exists(target_path)
+
+    if not target_path.is_file():
+        raise HTTPException(status_code=404, detail="Not a file")
+
+    mime_type = get_mime_type(target_path)
+    
+    if mime_type is None:
+        return FileResponse(target_path, filename=target_path.name, content_disposition_type="attachment")
+
+
+    return FileResponse(target_path, media_type=mime_type)

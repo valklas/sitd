@@ -125,16 +125,17 @@ function renderDirectory(data) {
         const link = document.createElement("a");
         const name = document.createElement("span");
 
-        link.href = `/files/${item.path}`;
         name.textContent = item.name;
 
         let icon;
 
         if (item.type === "file") {
             icon = getIcon(fileIconPath);
+            link.href = `/view/${item.path}`;
         }
         else if (item.type === "directory") {
             icon = getIcon(directoryIconPath);
+            link.href = `/files/${item.path}`;
 
             link.addEventListener("click", (event) => {
                 event.preventDefault();
