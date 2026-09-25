@@ -1,5 +1,10 @@
 const breadcrumb = document.getElementById("breadcrumb");
 const files = document.getElementById("files");
+
+const fileIconPath = "/static/assets/icons/white/file-white-24.svg";
+
+const directoryIconPath = "/static/assets/icons/white/file-directory-fill-white-24.svg";
+
 const iconCache = new Map();
 
 function getCurrentPath() {
@@ -23,10 +28,7 @@ async function getDirectory(path) {
 
 async function loadIcon(path) {
     if (iconCache.has(path)) {
-        const svg = iconCache.get(path);
-        
-        const iconClone = svg.cloneNode(true);
-        return iconClone;
+        return;
     }
 
     const response = await fetch(path);
@@ -38,10 +40,12 @@ async function loadIcon(path) {
     const svg = container.firstElementChild;
 
     iconCache.set(path, svg);
+}
 
-    const iconClone = svg.cloneNode(true);
+function getIcon(path) {
+    const svg = iconCache.get(path);
 
-    return iconClone;
+    return svg.cloneNode(true);
 }
 
 function renderBreadcrumb(path) {
@@ -88,7 +92,7 @@ function renderBreadcrumb(path) {
     breadcrumb.appendChild(fragment)
 }
 
-async function renderDirectory(data) {
+function renderDirectory(data) {
     files.innerHTML = "";
     
     const currentPath = getCurrentPath();
@@ -127,14 +131,10 @@ async function renderDirectory(data) {
         let icon;
 
         if (item.type === "file") {
-            icon = await loadIcon(
-                "/static/assets/icons/white/file-white-24.svg"
-            );
+            icon = getIcon(fileIconPath);
         }
         else if (item.type === "directory") {
-            icon = await loadIcon(
-                "/static/assets/icons/white/file-directory-fill-white-24.svg"
-            );
+            icon = getIcon(directoryIconPath);
 
             link.addEventListener("click", (event) => {
                 event.preventDefault();
@@ -158,7 +158,7 @@ async function showDirectory(path) {
 
     const data = await getDirectory(path);
 
-    await renderDirectory(data);
+    renderDirectory(data);
 }
 
 window.addEventListener("popstate", () => {
@@ -167,4 +167,11 @@ window.addEventListener("popstate", () => {
     showDirectory(path);
 });
 
-showDirectory(getCurrentPath());
+async function init() {
+    await loadIcon(fileIconPath);
+    await loadIcon(directoryIconPath);
+
+    showDirectory(getCurrentPath());
+}
+
+init();
