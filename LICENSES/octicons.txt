@@ -1,0 +1,6 @@
+## Third-party assets
+
+SITD uses icons from GitHub's Octicons.
+Octicons is licensed under the MIT License.
+
+Link to the repo: https://github.com/primer/octicons
