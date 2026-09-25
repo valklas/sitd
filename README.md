@@ -28,7 +28,7 @@ machineip:8000
 
 Machine ip is the ip of the machine that the server is running on.
 
-## Third-partie resources/assets
+## Third-party resources/assets
 
 See [LICENSES](LICENSES/)
 
