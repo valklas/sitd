@@ -1,16 +1,68 @@
+const breadcrumb = document.getElementById("breadcrumb");
 const files = document.getElementById("files");
 
+function getCurrentPath() {
+    let path = window.location.pathname;
+
+    if (path.startsWith("/files")) {
+        path = path.replace("/files", "");
+    }
+
+    return path.replace(/^\/+/, "");
+}
+
 async function getDirectory(path) {
-    const responce = await fetch(`/api/files/${path}`);
-    const data = await responce.json();
+    const response= await fetch(`/api/files/${path}`);
+    const data = await response.json();
 
     return data;
+}
+
+function renderBreadcrumb(path) {
+    breadcrumb.innerHTML = "";
+
+    const home = document.createElement("a");
+
+    home.textContent = "Home";
+    home.href = "/files";
+
+    home.addEventListener("click", (event) => {
+        event.preventDefault();
+
+        history.pushState({}, "", "/files");
+        showDirectory("");
+    });
+
+    breadcrumb.appendChild(home);
+
+    const parts = path ? path.split("/") : [];
+
+    for (let i = 0; i < parts.length; i++) {
+        const separator = document.createTextNode(" / ");
+        breadcrumb.appendChild(separator);
+
+        const link = document.createElement("a");
+        link.textContent = parts[i];
+
+        const linkPath = parts.slice(0, i + 1).join("/");
+
+        link.href = `/files/${linkPath}`;
+
+        link.addEventListener("click", (event) => {
+            event.preventDefault();
+
+            history.pushState({}, "", `/files/${linkPath}`);
+            showDirectory(linkPath);
+        });
+
+        breadcrumb.appendChild(link);
+    }
 }
 
 function renderDirectory(data) {
     files.innerHTML = "";
     
-    currentPath = getCurrentPath();
+    const currentPath = getCurrentPath();
 
     if (currentPath !== "") {
         const parentLink = document.createElement("a");
@@ -59,17 +111,9 @@ function renderDirectory(data) {
     }
 }
 
-function getCurrentPath() {
-    let path = window.location.pathname;
-
-    if (path.startsWith("/files")) {
-        path = path.replace("/files", "");
-    }
-
-    return path.replace(/^\/+/, "");
-}
-
 async function showDirectory(path) {
+    renderBreadcrumb(path);
+
     const data = await getDirectory(path);
 
     renderDirectory(data);

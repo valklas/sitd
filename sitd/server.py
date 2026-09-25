@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from .filesystem import inspect_dir
@@ -31,7 +31,7 @@ def get_target_path(path):
 
 @app.get("/")
 def home():
-    return FileResponse("sitd/static/index.html")
+    return RedirectResponse("/files")
 
 
 @app.get("/api/files")
@@ -70,4 +70,5 @@ def serve_sub_files(path: str):
     if target_path.is_file():
         return FileResponse(target_path)
 
-    raise HTTPException(status_code=404, detail="Not a file")
+    elif target_path.is_dir():
+            return FileResponse("sitd/static/index.html")
