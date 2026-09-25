@@ -12,6 +12,10 @@ nix develop
 
 in the project root. This will install the required packages and start fish as the shell.
 
+## Third-parties resources/assets
+
+See [LICENSES](LICENSES/)
+
 ## LICENSE
 
 This project is under [MIT](LICENSE).
