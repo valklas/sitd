@@ -112,6 +112,8 @@ def serve_sub_files(path: str):
         if mime_type and mime_type.startswith("text/"):
             return RedirectResponse(f"/view/{path}")
 
+        return FileResponse(target_path)
+
     elif target_path.is_dir():
             return FileResponse("sitd/static/index.html")
 
