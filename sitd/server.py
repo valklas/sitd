@@ -59,8 +59,14 @@ def generate_view(path):
         
         <pre>"""
 
-    for chunk in generate_file(path):
-        yield html.escape(chunk.decode("utf-8"))
+    with open(path, "r", encoding="utf-8") as file:
+        while True:
+            chunk = file.read(8192)
+    
+            if not chunk:
+                break
+    
+            yield html.escape(chunk)
 
     yield """</pre>
     </body>
