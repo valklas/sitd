@@ -43,12 +43,28 @@ def generate_file(path):
 
 
 def generate_view(path):
-    yield "<html><body><pre>"
+    file_name = html.escape(path.name)
+    yield f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{file_name}</title>
+
+        <link rel="icon" href="/static/assets/SITDWEBLOGO.svg">
+        <link rel="stylesheet" href="/static/style.css">
+    </head>
+    <body>
+        <h1>{file_name}</h1>
+        
+        <pre>"""
 
     for chunk in generate_file(path):
         yield html.escape(chunk.decode("utf-8"))
 
-    yield "</pre></body></html>"
+    yield """</pre>
+    </body>
+    </html>"""
 
 
 @app.get("/")

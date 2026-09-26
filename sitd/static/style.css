@@ -8,6 +8,11 @@ body {
     color: #ffffff;
 }
 
+pre {
+    white-space: pre-wrap;
+    overflow-x: auto;
+}
+
 #breadcrumb {
     margin-bottom: 1.5rem;
 }
