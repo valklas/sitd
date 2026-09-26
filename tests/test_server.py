@@ -270,19 +270,3 @@ def test_validate_path_does_not_exist(test_storage):
         sitd.server.validate_path_exists(path)
 
     assert exc_info.value.status_code == 404
-
-
-def test_get_mime_type(test_storage):
-    path = test_storage / "1.txt"
-
-    result = sitd.server.get_mime_type(path)
-
-    assert result == "text/plain"
-
-
-def test_get_mime_type_unknown(test_storage):
-    path = test_storage / "something.sitdtest"
-
-    result = sitd.server.get_mime_type(path)
-
-    assert result is None

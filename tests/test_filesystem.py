@@ -1,89 +1,103 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from sitd.filesystem import inspect_dir
+import pytest
+
+from sitd.filesystem import get_mime_type, inspect_dir
 from tests.helpers import assert_entries_valid, create_test_tree
 
 
-def test_files():
+@pytest.fixture
+def test_storage():
     with TemporaryDirectory() as temp_dir:
         root_dir = Path(temp_dir)
 
-        (root_dir / "1.txt").write_text("hello")
-        (root_dir / "2.txt").write_text("hello world")
-        (root_dir / "3.txt").write_text("hello world!")
-
-        result = inspect_dir(root_dir, root_dir)
-
-        assert isinstance(result, list)
-        assert len(result) == 3
-
-        assert_entries_valid(result, root_dir)
+        yield root_dir
 
 
-def test_single_file():
-    with TemporaryDirectory() as temp_dir:
-        root_dir = Path(temp_dir)
+def test_files(test_storage):
+    (test_storage / "1.txt").write_text("hello")
+    (test_storage / "2.txt").write_text("hello world")
+    (test_storage / "3.txt").write_text("hello world!")
 
-        file = root_dir / "hello.txt"
-        file.write_text("Hello, world!")
+    result = inspect_dir(test_storage, test_storage)
 
-        result = inspect_dir(root_dir, root_dir)
+    assert isinstance(result, list)
+    assert len(result) == 3
 
-        assert isinstance(result, list)
-        assert len(result) == 1
-
-        item = result[0]
-
-        assert item["name"] == "hello.txt"
-        assert item["type"] == "file"
-        assert item["path"] == "hello.txt"
-        assert item["file_size"] == file.stat().st_size
-
-        assert_entries_valid(result, root_dir)
+    assert_entries_valid(result, test_storage)
 
 
-def test_empty_directory():
-    with TemporaryDirectory() as temp_dir:
-        root_dir = Path(temp_dir)
+def test_single_file(test_storage):
+    file = test_storage / "hello.txt"
+    file.write_text("Hello, world!")
 
-        result = inspect_dir(root_dir, root_dir)
+    result = inspect_dir(test_storage, test_storage)
 
-        assert isinstance(result, list)
-        assert result == []
+    assert isinstance(result, list)
+    assert len(result) == 1
 
+    item = result[0]
 
-def test_nested_directories():
-    with TemporaryDirectory() as temp_dir:
-        root_dir = Path(temp_dir)
+    assert item["name"] == "hello.txt"
+    assert item["type"] == "file"
+    assert item["path"] == "hello.txt"
+    assert item["file_size"] == file.stat().st_size
+    assert item["mime_type"] == "text/plain"
 
-        create_test_tree(root_dir, 5)
-
-        result = inspect_dir(root_dir, root_dir)
-
-        assert isinstance(result, list)
-        assert len(result) == 4
-
-        assert_entries_valid(result, root_dir)
+    assert_entries_valid(result, test_storage)
 
 
-def test_empty_nested_directory():
-    with TemporaryDirectory() as temp_dir:
-        root_dir = Path(temp_dir)
+def test_empty_directory(test_storage):
+    result = inspect_dir(test_storage, test_storage)
 
-        empty_dir = root_dir / "empty"
-        empty_dir.mkdir()
+    assert isinstance(result, list)
+    assert result == []
 
-        result = inspect_dir(root_dir, root_dir)
 
-        assert isinstance(result, list)
-        assert len(result) == 1
+def test_nested_directories(test_storage):
+    create_test_tree(test_storage, 5)
 
-        item = result[0]
+    result = inspect_dir(test_storage, test_storage)
 
-        assert item["name"] == "empty"
-        assert item["type"] == "directory"
-        assert item["path"] == "empty"
-        assert item["children"] == []
+    assert isinstance(result, list)
+    assert len(result) == 4
 
-        assert_entries_valid(result, root_dir)
+    assert_entries_valid(result, test_storage)
+
+
+def test_empty_nested_directory(test_storage):
+    empty_dir = test_storage / "empty"
+    empty_dir.mkdir()
+
+    result = inspect_dir(test_storage, test_storage)
+
+    assert isinstance(result, list)
+    assert len(result) == 1
+
+    item = result[0]
+
+    assert item["name"] == "empty"
+    assert item["type"] == "directory"
+    assert item["path"] == "empty"
+    assert item["children"] == []
+
+    assert_entries_valid(result, test_storage)
+
+
+def test_get_mime_type(test_storage):
+    path = test_storage / "1.txt"
+    path.write_text("Hello")
+
+    result = get_mime_type(path)
+
+    assert result == "text/plain"
+
+
+def test_get_mime_type_unknown(test_storage):
+    path = test_storage / "something.sitdtest"
+    path.write_text("Hello")
+
+    result = get_mime_type(path)
+
+    assert result is None
