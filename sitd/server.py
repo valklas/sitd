@@ -1,7 +1,8 @@
+import html
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from .filesystem import get_mime_type, inspect_dir
@@ -19,6 +20,7 @@ def validate_path_exists(path):
     if not path.exists():
         raise HTTPException(status_code=404, detail="You sure this is the correct path...")
 
+
 def get_target_path(path):
     root = storage_path.resolve()
     target_path = (storage_path / path).resolve()
@@ -27,6 +29,26 @@ def get_target_path(path):
         raise HTTPException(status_code=404, detail="Naughty you...")
     
     return target_path
+
+
+def generate_file(path):
+    with open(path, "rb") as file:
+        while True:
+            chunk = file.read(8192)
+
+            if not chunk:
+                break
+
+            yield chunk
+
+
+def generate_view(path):
+    yield "<html><body><pre>"
+
+    for chunk in generate_file(path):
+        yield html.escape(chunk.decode("utf-8"))
+
+    yield "</pre></body></html>"
 
 
 @app.get("/")
@@ -85,8 +107,11 @@ def view_file(path: str):
 
     mime_type = get_mime_type(target_path)
     
-    if mime_type is None:
+    if mime_type and mime_type.startswith("text/"):
+        return StreamingResponse(generate_view(target_path), media_type="text/html")
+
+    elif mime_type is None:
         return FileResponse(target_path, filename=target_path.name, content_disposition_type="attachment")
-
-
-    return FileResponse(target_path, media_type=mime_type)
+    
+    else:
+        return FileResponse(target_path, media_type=mime_type)
