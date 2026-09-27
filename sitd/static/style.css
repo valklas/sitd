@@ -8,19 +8,81 @@ body {
     color: #ffffff;
 }
 
-pre {
-    white-space: pre-wrap;
-    overflow-x: auto;
-}
-
 #breadcrumb {
     margin-bottom: 1.5rem;
+
+    padding: 0.75rem 1rem;
+
+    border: 1px solid #333333;
+    border-radius: 8px;
+
+    background: #0a0a0a;
+}
+
+#breadcrumb a {
+    color: #ffffff;
 }
 
 #files {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+
+    padding: 1rem;
+
+    border: 1px solid #333333;
+    border-radius: 8px;
+
+    background: #0a0a0a;
+}
+
+#files a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    padding: 0.6rem 0.75rem;
+
+    border-radius: 6px;
+
+    color: #ffffff;
+    text-decoration: none;
+}
+
+#files a:hover {
+    background: #1a1a1a;
+}
+
+#files a svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+#files p {
+    margin: 0;
+
+    padding: 0.6rem 0.75rem;
+
+    border: 1px solid #333333;
+    border-radius: 6px;
+
+    background: #050505;
+}
+
+#files pre {
+    margin: 0;
+    padding: 1rem;
+
+    border: 1px solid #333333;
+    border-radius: 8px;
+
+    background: #050505;
+
+    white-space: pre-wrap;
+    overflow-x: auto;
+
+    line-height: 1.5;
 }
 
 a {
@@ -29,17 +91,5 @@ a {
 }
 
 a:hover {
-    opacity: 70%;
-}
-
-#files a {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-#files a svg {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
+    opacity: 0.7;
 }

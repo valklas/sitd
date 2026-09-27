@@ -106,26 +106,8 @@ def api_sub_files(path: str):
         return file_entry
 
 
-@app.get("/files/{path:path}")
-def serve_sub_files(path: str):
-    target_path = get_target_path(path)
-
-    validate_path_exists(target_path)
-
-    if target_path.is_file():
-        mime_type = get_mime_type(target_path)
-
-        if mime_type and mime_type.startswith("text/"):
-            return RedirectResponse(f"/view/{path}")
-
-        return FileResponse(target_path)
-
-    elif target_path.is_dir():
-            return FileResponse("sitd/static/index.html")
-
-
-@app.get("/view/{path:path}")
-def view_file(path: str):
+@app.get("/api/content/{path:path}")
+def get_file_content(path: str):
     target_path = get_target_path(path)
     validate_path_exists(target_path)
 
@@ -133,12 +115,25 @@ def view_file(path: str):
         raise HTTPException(status_code=404, detail="Not a file")
 
     mime_type = get_mime_type(target_path)
-    
-    if mime_type and mime_type.startswith("text/"):
-        return StreamingResponse(generate_view(target_path), media_type="text/html")
 
-    elif mime_type is None:
-        return FileResponse(target_path, filename=target_path.name, content_disposition_type="attachment")
-    
-    else:
-        return FileResponse(target_path, media_type=mime_type)
+    if mime_type is None:
+        return FileResponse(
+            target_path,
+            filename=target_path.name,
+            content_disposition_type="attachment",
+        )
+
+    return FileResponse(
+        target_path,
+        media_type=mime_type,
+    )
+
+
+@app.get("/files/{path:path}")
+def serve_sub_files(path: str):
+    target_path = get_target_path(path)
+
+    validate_path_exists(target_path)
+
+    if target_path:
+        return FileResponse("sitd/static/index.html")

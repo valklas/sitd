@@ -9,7 +9,7 @@ import sitd.server
 from sitd.server import (
     app,
     get_target_path,
-    validate_path_exists
+    validate_path_exists,
 )
 from tests.helpers import assert_entries_valid, create_test_tree
 
@@ -143,9 +143,6 @@ def test_files_file(test_storage):
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/html")
-    assert "<title>1.txt</title>" in response.text
-    assert "<h1>1.txt</h1>" in response.text
-    assert "This is the 1.txt file." in response.text
 
 
 def test_files_nested_file(test_storage):
@@ -153,9 +150,6 @@ def test_files_nested_file(test_storage):
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/html")
-    assert "<title>1.txt</title>" in response.text
-    assert "<h1>1.txt</h1>" in response.text
-    assert "This is the 1.txt file." in response.text
 
 
 def test_files_not_found(test_storage):
@@ -170,104 +164,67 @@ def test_files_path_traversal(test_storage):
     assert response.status_code == 404
 
 
-def test_view_text_file(test_storage):
+def test_api_content_text_file(test_storage):
     file = test_storage / "hello.txt"
     file.write_text("Hello, world!")
 
-    response = client.get("/view/hello.txt")
+    response = client.get("/api/content/hello.txt")
 
     assert response.status_code == 200
-    assert response.headers["content-type"].startswith("text/html")
-    assert "Hello, world!" in response.text
+    assert response.headers["content-type"].startswith("text/plain")
+    assert response.text == "Hello, world!"
 
 
-def test_view_text_file_escapes_html(test_storage):
-    file = test_storage / "hello.html"
-    file.write_text("<script>alert('hello')</script>")
-
-    response = client.get("/view/hello.html")
-
-    assert response.status_code == 200
-    assert "&lt;script&gt;" in response.text
-    assert "<script>" not in response.text
-
-
-def test_view_text_file_utf8(test_storage):
-    file = test_storage / "unicode.txt"
-    file.write_text(
-        "Hello — اردو — 日本語 — 😀",
-        encoding="utf-8",
-    )
-
-    response = client.get("/view/unicode.txt")
-
-    assert response.status_code == 200
-    assert "Hello — اردو — 日本語 — 😀" in response.text
-
-
-def test_view_nested_text_file(test_storage):
-    directory = test_storage / "view_test"
+def test_api_content_nested_text_file(test_storage):
+    directory = test_storage / "content_test"
     directory.mkdir()
 
     file = directory / "hello.txt"
     file.write_text("Hello from a nested file!")
 
-    response = client.get("/view/view_test/hello.txt")
+    response = client.get("/api/content/content_test/hello.txt")
 
     assert response.status_code == 200
-    assert "Hello from a nested file!" in response.text
+    assert response.headers["content-type"].startswith("text/plain")
+    assert response.text == "Hello from a nested file!"
 
 
-def test_view_text_file_name(test_storage):
-    file = test_storage / "hello.txt"
-    file.write_text("Hello!")
-
-    response = client.get("/view/hello.txt")
-
-    assert response.status_code == 200
-    assert "<title>hello.txt</title>" in response.text
-    assert "<h1>hello.txt</h1>" in response.text
-
-
-def test_view_directory(test_storage):
-    directory = test_storage / "directory"
-    directory.mkdir()
-
-    response = client.get("/view/directory")
-
-    assert response.status_code == 404
-
-
-def test_view_not_found(test_storage):
-    response = client.get("/view/does-not-exist.txt")
-
-    assert response.status_code == 404
-
-
-def test_view_path_traversal(test_storage):
-    response = client.get("/view/%2E%2E/%2E%2E/etc/passwd")
-
-    assert response.status_code == 404
-
-
-def test_view_unknown_mime_type(test_storage):
+def test_api_content_unknown_mime_type(test_storage):
     file = test_storage / "something.sitdtest"
     file.write_bytes(b"Some unknown file")
 
-    response = client.get("/view/something.sitdtest")
+    response = client.get("/api/content/something.sitdtest")
 
     assert response.status_code == 200
     assert "attachment" in response.headers["content-disposition"]
 
 
-def test_view_image(test_storage):
+def test_api_content_image(test_storage):
     file = test_storage / "image.jpg"
     file.write_bytes(b"fake image data")
 
-    response = client.get("/view/image.jpg")
+    response = client.get("/api/content/image.jpg")
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("image/jpeg")
+
+
+def test_api_content_directory(test_storage):
+    response = client.get("/api/content/5_dir")
+
+    assert response.status_code == 404
+
+
+def test_api_content_not_found(test_storage):
+    response = client.get("/api/content/does-not-exist.txt")
+
+    assert response.status_code == 404
+
+
+def test_api_content_path_traversal(test_storage):
+    response = client.get("/api/content/%2E%2E/%2E%2E/etc/passwd")
+
+    assert response.status_code == 404
 
 
 def test_get_target_path(test_storage):

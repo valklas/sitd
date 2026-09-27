@@ -26,6 +26,12 @@ async function getDirectory(path) {
     return data;
 }
 
+function getIcon(path) {
+    const svg = iconCache.get(path);
+
+    return svg.cloneNode(true);
+}
+
 async function loadIcon(path) {
     if (iconCache.has(path)) {
         return;
@@ -42,10 +48,18 @@ async function loadIcon(path) {
     iconCache.set(path, svg);
 }
 
-function getIcon(path) {
-    const svg = iconCache.get(path);
+function humanReadable(bytes) {
+    const units = ["B", "KB", "MB", "GB", "TB"];
 
-    return svg.cloneNode(true);
+    let size = bytes;
+    let unit = 0;
+
+    while (size >= 1024 && unit < units.length - 1) {
+        size /= 1024;
+        unit++;
+    }
+
+    return `${size.toFixed(2)} ${units[unit]}`;
 }
 
 function renderBreadcrumb(path) {
@@ -131,7 +145,14 @@ function renderDirectory(data) {
 
         if (item.type === "file") {
             icon = getIcon(fileIconPath);
-            link.href = `/view/${item.path}`;
+            link.href = `/files/${item.path}`;
+        
+            link.addEventListener("click", (event) => {
+                event.preventDefault();
+        
+                history.pushState({}, "", `/files/${item.path}`);
+                showDirectory(item.path);
+            });
         }
         else if (item.type === "directory") {
             icon = getIcon(directoryIconPath);
@@ -154,12 +175,99 @@ function renderDirectory(data) {
     files.appendChild(fragment);
 }
 
+async function renderFile(data) {
+    files.innerHTML = "";
+
+    const name = document.createElement("p");
+    const fileType = document.createElement("p");
+    const size = document.createElement("p");
+
+    name.textContent = `Name: ${data.name}`;
+    fileType.textContent = `Type: ${data.mime_type}`;
+    size.textContent = `Size: ${humanReadable(data.file_size)}`;
+
+    files.appendChild(name);
+    files.appendChild(fileType);
+    files.appendChild(size);
+
+    if (data.mime_type === null) {
+        const download = document.createElement("a");
+
+        download.href = `/api/content/${data.path}`;
+        download.textContent = "Download file";
+        download.download = data.name;
+
+        files.appendChild(download);
+
+        return;
+    }
+
+    if (data.mime_type.startsWith("text/")) {
+        const contentElement = document.createElement("pre");
+
+        const response = await fetch(`/api/content/${data.path}`);
+        const content = await response.text();
+
+        contentElement.textContent = content;
+
+        files.appendChild(contentElement);
+
+        return;
+    }
+
+    if (data.mime_type.startsWith("image/")) {
+        const image = document.createElement("img");
+
+        image.src = `/api/content/${data.path}`;
+        image.alt = data.name;
+
+        files.appendChild(image);
+
+        return;
+    }
+
+    if (data.mime_type.startsWith("video/")) {
+        const video = document.createElement("video");
+
+        video.src = `/api/content/${data.path}`;
+        video.controls = true;
+
+        files.appendChild(video);
+
+        return;
+    }
+
+    if (data.mime_type.startsWith("audio/")) {
+        const audio = document.createElement("audio");
+
+        audio.src = `/api/content/${data.path}`;
+        audio.controls = true;
+
+        files.appendChild(audio);
+
+        return;
+    }
+
+    const download = document.createElement("a");
+
+    download.href = `/api/content/${data.path}`;
+    download.textContent = "Download file";
+    download.download = data.name;
+
+    files.appendChild(download);
+}
+
 async function showDirectory(path) {
     renderBreadcrumb(path);
 
     const data = await getDirectory(path);
 
-    renderDirectory(data);
+    if (Array.isArray(data)) {
+        renderDirectory(data);
+    }
+    else {
+        renderFile(data);
+    }
 }
 
 window.addEventListener("popstate", () => {
@@ -172,7 +280,9 @@ async function init() {
     await loadIcon(fileIconPath);
     await loadIcon(directoryIconPath);
 
-    showDirectory(getCurrentPath());
+    const path = getCurrentPath();
+
+    showDirectory(path);
 }
 
 init();
