@@ -2,7 +2,6 @@ const breadcrumb = document.getElementById("breadcrumb");
 const files = document.getElementById("files");
 
 const fileIconPath = "/static/assets/icons/white/file-white-24.svg";
-
 const directoryIconPath = "/static/assets/icons/white/file-directory-fill-white-24.svg";
 
 const iconCache = new Map();
@@ -175,6 +174,46 @@ function renderDirectory(data) {
     files.appendChild(fragment);
 }
 
+async function streamTextFile(path, element) {
+    const response = await fetch(`/api/content/${path}`);
+
+    if (!response.ok) {
+        throw new Error(`Failed to load file: ${response.status}`);
+    }
+
+    if (!response.body) {
+        throw new Error("Streaming is not supported");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    let buffer = "";
+    let lastRender = performance.now();
+
+    while (true) {
+        const { value, done } = await reader.read();
+
+        if (done) {
+            break;
+        }
+
+        buffer += decoder.decode(value, {
+            stream: true,
+        });
+
+        if (performance.now() - lastRender >= 100) {
+            element.textContent += buffer;
+            buffer = "";
+            lastRender = performance.now();
+        }
+    }
+
+    buffer += decoder.decode();
+
+    element.textContent += buffer;
+}
+
 async function renderFile(data) {
     files.innerHTML = "";
 
@@ -204,14 +243,11 @@ async function renderFile(data) {
 
     if (data.mime_type.startsWith("text/")) {
         const contentElement = document.createElement("pre");
-
-        const response = await fetch(`/api/content/${data.path}`);
-        const content = await response.text();
-
-        contentElement.textContent = content;
-
+    
         files.appendChild(contentElement);
-
+    
+        await streamTextFile(data.path, contentElement);
+    
         return;
     }
 

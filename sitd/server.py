@@ -31,17 +31,6 @@ def get_target_path(path):
     return target_path
 
 
-def generate_file(path):
-    with open(path, "rb") as file:
-        while True:
-            chunk = file.read(8192)
-
-            if not chunk:
-                break
-
-            yield chunk
-
-
 @app.get("/")
 def home():
     return RedirectResponse("/files")
