@@ -42,37 +42,6 @@ def generate_file(path):
             yield chunk
 
 
-def generate_view(path):
-    file_name = html.escape(path.name)
-    yield f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>{file_name}</title>
-
-        <link rel="icon" href="/static/assets/SITDWEBLOGO.svg">
-        <link rel="stylesheet" href="/static/style.css">
-    </head>
-    <body>
-        <h1>{file_name}</h1>
-        
-        <pre>"""
-
-    with open(path, "r", encoding="utf-8") as file:
-        while True:
-            chunk = file.read(8192)
-    
-            if not chunk:
-                break
-    
-            yield html.escape(chunk)
-
-    yield """</pre>
-    </body>
-    </html>"""
-
-
 @app.get("/")
 def home():
     return RedirectResponse("/files")
