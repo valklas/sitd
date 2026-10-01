@@ -6,6 +6,18 @@ const directoryIconPath = "/static/assets/icons/white/file-directory-fill-white-
 
 const iconCache = new Map();
 
+const MAX_TEXT_FILE_SIZE = 5 * 1024 * 1024;
+
+function downloadLink(data) {
+    const download = document.createElement("a");
+
+    download.href = `/api/content/${data.path}`;
+    download.textContent = "Download file";
+    download.download = data.name;
+
+    files.appendChild(download);
+}
+
 function getCurrentPath() {
     let path = window.location.pathname;
 
@@ -31,6 +43,20 @@ function getIcon(path) {
     return svg.cloneNode(true);
 }
 
+function humanReadable(bytes) {
+    const units = ["B", "KB", "MB", "GB", "TB"];
+
+    let size = bytes;
+    let unit = 0;
+
+    while (size >= 1024 && unit < units.length - 1) {
+        size /= 1024;
+        unit++;
+    }
+
+    return `${size.toFixed(2)} ${units[unit]}`;
+}
+
 async function loadIcon(path) {
     if (iconCache.has(path)) {
         return;
@@ -47,18 +73,11 @@ async function loadIcon(path) {
     iconCache.set(path, svg);
 }
 
-function humanReadable(bytes) {
-    const units = ["B", "KB", "MB", "GB", "TB"];
-
-    let size = bytes;
-    let unit = 0;
-
-    while (size >= 1024 && unit < units.length - 1) {
-        size /= 1024;
-        unit++;
-    }
-
-    return `${size.toFixed(2)} ${units[unit]}`;
+async function loadTextFile(path, element) {
+    const response = await fetch(`/api/content/${path}`);
+    const text = await response.text();
+    
+    element.textContent = text;
 }
 
 function renderBreadcrumb(path) {
@@ -74,7 +93,7 @@ function renderBreadcrumb(path) {
         event.preventDefault();
 
         history.pushState({}, "", "/files");
-        showDirectory("");
+        showPath("");
     });
 
     fragment.appendChild(home);
@@ -96,7 +115,7 @@ function renderBreadcrumb(path) {
             event.preventDefault();
 
             history.pushState({}, "", `/files/${linkPath}`);
-            showDirectory(linkPath);
+            showPath(linkPath);
         });
 
         fragment.appendChild(link);
@@ -128,7 +147,7 @@ function renderDirectory(data) {
 
             history.pushState({}, "", `/files/${parent}`);
 
-            showDirectory(parent);
+            showPath(parent);
         });
 
         fragment.appendChild(parentLink);
@@ -150,7 +169,7 @@ function renderDirectory(data) {
                 event.preventDefault();
         
                 history.pushState({}, "", `/files/${item.path}`);
-                showDirectory(item.path);
+                showPath(item.path);
             });
         }
         else if (item.type === "directory") {
@@ -161,7 +180,7 @@ function renderDirectory(data) {
                 event.preventDefault();
 
                 history.pushState({}, "", `/files/${item.path}`);
-                showDirectory(item.path);
+                showPath(item.path);
             });
         }
 
@@ -172,46 +191,6 @@ function renderDirectory(data) {
     }
 
     files.appendChild(fragment);
-}
-
-async function streamTextFile(path, element) {
-    const response = await fetch(`/api/content/${path}`);
-
-    if (!response.ok) {
-        throw new Error(`Failed to load file: ${response.status}`);
-    }
-
-    if (!response.body) {
-        throw new Error("Streaming is not supported");
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    let buffer = "";
-    let lastRender = performance.now();
-
-    while (true) {
-        const { value, done } = await reader.read();
-
-        if (done) {
-            break;
-        }
-
-        buffer += decoder.decode(value, {
-            stream: true,
-        });
-
-        if (performance.now() - lastRender >= 100) {
-            element.textContent += buffer;
-            buffer = "";
-            lastRender = performance.now();
-        }
-    }
-
-    buffer += decoder.decode();
-
-    element.textContent += buffer;
 }
 
 async function renderFile(data) {
@@ -230,28 +209,46 @@ async function renderFile(data) {
     files.appendChild(size);
 
     if (data.mime_type === null) {
-        const download = document.createElement("a");
-
-        download.href = `/api/content/${data.path}`;
-        download.textContent = "Download file";
-        download.download = data.name;
-
-        files.appendChild(download);
+        downloadLink(data);
 
         return;
     }
 
     if (data.mime_type.startsWith("text/")) {
-        const contentElement = document.createElement("pre");
-    
-        files.appendChild(contentElement);
-    
-        await streamTextFile(data.path, contentElement);
-    
-        return;
+        if (data.file_size <= MAX_TEXT_FILE_SIZE) {
+            const loadingElement = document.createElement("p");
+            loadingElement.textContent = "Wait, loading file...";
+        
+            files.appendChild(loadingElement);
+        
+            const contentElement = document.createElement("pre");
+
+            downloadLink(data);
+        
+            await loadTextFile(data.path, contentElement);
+        
+            loadingElement.remove();
+        
+            files.appendChild(contentElement);
+        
+            return;
+        }
+        else {
+            downloadLink(data);
+
+            const contentElement = document.createElement("p");
+
+            contentElement.textContent = "SITD viewer can't currently show a file that is greater then 5MB, :(";
+
+            files.appendChild(contentElement);
+
+            return;
+        }
     }
 
     if (data.mime_type.startsWith("image/")) {
+        downloadLink(data);
+
         const image = document.createElement("img");
 
         image.src = `/api/content/${data.path}`;
@@ -263,6 +260,8 @@ async function renderFile(data) {
     }
 
     if (data.mime_type.startsWith("video/")) {
+        downloadLink(data);
+
         const video = document.createElement("video");
 
         video.src = `/api/content/${data.path}`;
@@ -274,6 +273,8 @@ async function renderFile(data) {
     }
 
     if (data.mime_type.startsWith("audio/")) {
+        downloadLink(data);
+
         const audio = document.createElement("audio");
 
         audio.src = `/api/content/${data.path}`;
@@ -283,17 +284,9 @@ async function renderFile(data) {
 
         return;
     }
-
-    const download = document.createElement("a");
-
-    download.href = `/api/content/${data.path}`;
-    download.textContent = "Download file";
-    download.download = data.name;
-
-    files.appendChild(download);
 }
 
-async function showDirectory(path) {
+async function showPath(path) {
     renderBreadcrumb(path);
 
     const data = await getDirectory(path);
@@ -309,7 +302,7 @@ async function showDirectory(path) {
 window.addEventListener("popstate", () => {
     const path = getCurrentPath();
     
-    showDirectory(path);
+    showPath(path);
 });
 
 async function init() {
@@ -318,7 +311,7 @@ async function init() {
 
     const path = getCurrentPath();
 
-    showDirectory(path);
+    showPath(path);
 }
 
 init();
