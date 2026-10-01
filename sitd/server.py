@@ -1,11 +1,14 @@
 import html, hashlib
 from pathlib import Path
+import zipfile
 
 from datetime import datetime, timezone
 from email.utils import format_datetime, parsedate_to_datetime
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
+from starlette.background import BackgroundTask
+from tempfile import TemporaryDirectory
 
 from .filesystem import get_mime_type, inspect_dir
 
@@ -16,6 +19,22 @@ app.mount("/static", StaticFiles(directory="sitd/static"), name="static")
 
 
 storage_path = Path("~/.local/share/sitd/storage").expanduser()
+
+
+def create_zip(source_dir, output_path):
+    with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for item in source_dir.rglob("*"):
+            relative_path = item.relative_to(source_dir.parent)    
+
+            if item.is_file():
+                zip_file.write(item, arcname=relative_path)
+            
+            elif item.is_dir():
+                zip_file.mkdir(str(relative_path))
+
+        result = zip_file.namelist()
+
+    return result
 
 
 def validate_path_exists(path):
@@ -115,6 +134,32 @@ def get_file_content(path: str, if_none_match: str | None = Header(default=None)
         return FileResponse(target_path, filename=target_path.name, content_disposition_type="attachment", headers=headers)
 
     return FileResponse(target_path, media_type=mime_type, headers=headers)
+
+
+@app.get("/api/download/{path:path}")
+def download_directory(path: str):
+    target_path = get_target_path(path)
+
+    validate_path_exists(target_path)
+
+    if not target_path.is_dir():
+        raise HTTPException(status_code=404, detail="Not a directory")
+
+    temp_dir = TemporaryDirectory()
+
+    if target_path == storage_path:
+        zip_name = "root.zip"
+
+    else:
+        zip_name = f"{target_path.name}.zip"
+
+    output_path = Path(temp_dir.name) / zip_name
+
+    create_zip(target_path, output_path)
+
+    background = BackgroundTask(temp_dir.cleanup)
+
+    return FileResponse(output_path, filename=zip_name, background=background)
 
 
 @app.get("/files/{path:path}")
