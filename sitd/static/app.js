@@ -1,4 +1,5 @@
 const breadcrumb = document.getElementById("breadcrumb");
+const ddl = document.getElementById("ddl");
 const files = document.getElementById("files");
 
 const fileIconPath = "/static/assets/icons/white/file-white-24.svg";
@@ -8,7 +9,18 @@ const iconCache = new Map();
 
 const MAX_TEXT_FILE_SIZE = 5 * 1024 * 1024;
 
-function downloadLink(data) {
+function directoryDownloadLink(path) {
+    ddl.innerHTML = "";
+
+    const download = document.createElement("a");
+
+    download.href = `/api/download/${path}`;
+    download.textContent = "Download directories";
+
+    ddl.appendChild(download);
+}
+
+function fileDownloadLink(data) {
     const download = document.createElement("a");
 
     download.href = `/api/content/${data.path}`;
@@ -209,7 +221,7 @@ async function renderFile(data) {
     files.appendChild(size);
 
     if (data.mime_type === null) {
-        downloadLink(data);
+        fileDownloadLink(data);
 
         return;
     }
@@ -223,7 +235,7 @@ async function renderFile(data) {
         
             const contentElement = document.createElement("pre");
 
-            downloadLink(data);
+            fileDownloadLink(data);
         
             await loadTextFile(data.path, contentElement);
         
@@ -234,7 +246,7 @@ async function renderFile(data) {
             return;
         }
         else {
-            downloadLink(data);
+            fileDownloadLink(data);
 
             const contentElement = document.createElement("p");
 
@@ -247,7 +259,7 @@ async function renderFile(data) {
     }
 
     if (data.mime_type.startsWith("image/")) {
-        downloadLink(data);
+        fileDownloadLink(data);
 
         const image = document.createElement("img");
 
@@ -260,7 +272,7 @@ async function renderFile(data) {
     }
 
     if (data.mime_type.startsWith("video/")) {
-        downloadLink(data);
+        fileDownloadLink(data);
 
         const video = document.createElement("video");
 
@@ -273,7 +285,7 @@ async function renderFile(data) {
     }
 
     if (data.mime_type.startsWith("audio/")) {
-        downloadLink(data);
+        fileDownloadLink(data);
 
         const audio = document.createElement("audio");
 
@@ -292,9 +304,13 @@ async function showPath(path) {
     const data = await getDirectory(path);
 
     if (Array.isArray(data)) {
+        directoryDownloadLink(path);
         renderDirectory(data);
     }
     else {
+        ddl.innerHTML = "";
+        ddl.style.display = "none";
+
         renderFile(data);
     }
 }
