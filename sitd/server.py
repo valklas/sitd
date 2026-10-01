@@ -40,10 +40,7 @@ def get_file_etag(path):
 
 
 def get_last_modified(path):
-    modified_time = datetime.fromtimestamp(
-        path.stat().st_mtime,
-        tz=timezone.utc,
-    )
+    modified_time = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
 
     return modified_time.replace(microsecond=0)
 
@@ -102,40 +99,22 @@ def get_file_content(path: str, if_none_match: str | None = Header(default=None)
     }
 
     if if_none_match == etag:
-        return Response(
-            status_code=304,
-            headers=headers
-        )
+        return Response(status_code=304, headers=headers)
     
     if if_modified_since:
         modified_since = parsedate_to_datetime(if_modified_since)
     
-        last_modified = datetime.fromtimestamp(
-            target_path.stat().st_mtime,
-            tz=timezone.utc,
-        ).replace(microsecond=0)
+        last_modified = datetime.fromtimestamp(target_path.stat().st_mtime, tz=timezone.utc).replace(microsecond=0)
     
         if last_modified <= modified_since:
-            return Response(
-                status_code=304,
-                headers=headers,
-            )
+            return Response(status_code=304, headers=headers)
 
     mime_type = get_mime_type(target_path)
 
     if mime_type is None:
-        return FileResponse(
-            target_path,
-            filename=target_path.name,
-            content_disposition_type="attachment",
-            headers=headers
-        )
+        return FileResponse(target_path, filename=target_path.name, content_disposition_type="attachment", headers=headers)
 
-    return FileResponse(
-        target_path,
-        media_type=mime_type,
-        headers=headers
-    )
+    return FileResponse(target_path, media_type=mime_type, headers=headers)
 
 
 @app.get("/files/{path:path}")
